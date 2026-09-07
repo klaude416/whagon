@@ -98,71 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Inquiry Form Submission Logic (FormSubmit AJAX API)
-  if (inquiryForm) {
-    inquiryForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById('buyerName').value.trim();
-      const email = document.getElementById('buyerEmail').value.trim();
-      const amount = document.getElementById('offerAmount').value.trim();
-      const message = document.getElementById('buyerMessage').value.trim();
-      const submitBtn = inquiryForm.querySelector('button[type="submit"]');
-
-      if (!name || !email || !amount) {
-        showToast('Please fill in all required fields.');
-        return;
-      }
-
-      // Loading state on button
-      const originalBtnText = submitBtn ? submitBtn.textContent : 'Send Offer Inquiry';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending Offer...';
-      }
-
-      // Payload for FormSubmit API
-      const payload = {
-        _subject: `[whagon.fyi Offer] $${amount} USD from ${name}`,
-        _template: 'table',
-        Domain: 'whagon.fyi',
-        'Buyer Name': name,
-        'Buyer Email': email,
-        'Proposed Offer': `$${amount} USD`,
-        'Message / Terms': message || 'None'
-      };
-
-      fetch('https://formsubmit.co/ajax/klaude416@gmail.com', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(response => response.json())
-      .then(data => {
-        closeModal();
-        showToast('🎉 Offer sent successfully! We will contact you soon.');
-        inquiryForm.reset();
-      })
-      .catch(error => {
-        console.error('Submission error:', error);
-        // Fallback to Mailto link if network issue
-        const mailSubject = encodeURIComponent(`[whagon.fyi Offer] $${amount} USD from ${name}`);
-        const mailBody = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nOffer: $${amount} USD\nMessage: ${message}`);
-        window.location.href = `mailto:klaude416@gmail.com?subject=${mailSubject}&body=${mailBody}`;
-        closeModal();
-        showToast('Opening email client...');
-      })
-      .finally(() => {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalBtnText;
-        }
-      });
-    });
-  }
+  // 4. Inquiry Form Submission Handling (Native HTML POST handles submission directly)
+  // No JS interception needed — eliminates CORS & script dependency risks.
 
   // 5. Scroll Animations (Intersection Observer)
   const observerOptions = {
