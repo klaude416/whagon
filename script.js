@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Inquiry Form Submission Logic (Generates Mailto & Fallback)
+  // 4. Inquiry Form Submission Logic (FormSubmit AJAX API)
   if (inquiryForm) {
     inquiryForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -107,37 +107,60 @@ document.addEventListener('DOMContentLoaded', () => {
       const email = document.getElementById('buyerEmail').value.trim();
       const amount = document.getElementById('offerAmount').value.trim();
       const message = document.getElementById('buyerMessage').value.trim();
+      const submitBtn = inquiryForm.querySelector('button[type="submit"]');
 
       if (!name || !email || !amount) {
         showToast('Please fill in all required fields.');
         return;
       }
 
-      // Construct Email Subject & Body
-      const mailSubject = encodeURIComponent(`[whagon.fyi] Acquisition Offer ($${amount}) from ${name}`);
-      const mailBody = encodeURIComponent(
-        `Domain Offer Details for whagon.fyi:\n\n` +
-        `• Name / Organization: ${name}\n` +
-        `• Email Address: ${email}\n` +
-        `• Proposed Offer: $${amount} USD\n\n` +
-        `• Message / Additional Terms:\n${message || 'No additional message provided.'}\n\n` +
-        `----------------------------------------\n` +
-        `Sent via whagon.fyi Landing Page`
-      );
+      // Loading state on button
+      const originalBtnText = submitBtn ? submitBtn.textContent : 'Send Offer Inquiry';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending Offer...';
+      }
 
-      // Open mailto link
-      const mailtoUrl = `mailto:klaude416@gmail.com?subject=${mailSubject}&body=${mailBody}`;
-      
-      closeModal();
-      showToast('Preparing email client with your offer details...');
-      
-      // Delay slightly for UX toast
-      setTimeout(() => {
-        window.location.href = mailtoUrl;
-      }, 500);
+      // Payload for FormSubmit API
+      const payload = {
+        _subject: `[whagon.fyi Offer] $${amount} USD from ${name}`,
+        _template: 'table',
+        Domain: 'whagon.fyi',
+        'Buyer Name': name,
+        'Buyer Email': email,
+        'Proposed Offer': `$${amount} USD`,
+        'Message / Terms': message || 'None'
+      };
 
-      // Reset form
-      inquiryForm.reset();
+      fetch('https://formsubmit.co/ajax/klaude416@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        closeModal();
+        showToast('🎉 Offer sent successfully! We will contact you soon.');
+        inquiryForm.reset();
+      })
+      .catch(error => {
+        console.error('Submission error:', error);
+        // Fallback to Mailto link if network issue
+        const mailSubject = encodeURIComponent(`[whagon.fyi Offer] $${amount} USD from ${name}`);
+        const mailBody = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nOffer: $${amount} USD\nMessage: ${message}`);
+        window.location.href = `mailto:klaude416@gmail.com?subject=${mailSubject}&body=${mailBody}`;
+        closeModal();
+        showToast('Opening email client...');
+      })
+      .finally(() => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
+        }
+      });
     });
   }
 
